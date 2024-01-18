@@ -68,7 +68,7 @@ class FormBuilderDateTimePicker extends FormBuilderField<DateTime> {
   /// `null` if [format] fails to parse the text.
   final ValueChanged<DateTime?>? onFieldSubmitted;
   final TextEditingController? controller;
-  final TextInputType keyboardType;
+  final TextInputType? keyboardType;
   final TextStyle? style;
   final TextAlign textAlign;
   final TextAlignVertical? textAlignVertical;
@@ -146,7 +146,7 @@ class FormBuilderDateTimePicker extends FormBuilderField<DateTime> {
     this.enableInteractiveSelection = true,
     this.resetIcon = const Icon(Icons.close),
     this.initialTime = const TimeOfDay(hour: 12, minute: 0),
-    this.keyboardType = TextInputType.text,
+    this.keyboardType,
     this.textAlign = TextAlign.start,
     this.autofocus = false,
     this.obscureText = false,
