@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 /// A Material Design text field input.
-class FormBuilderTextField extends FormBuilderField<String> {
+class FormBuilderTextField extends FormBuilderFieldDecoration<String> {
   /// Controls the text being edited.
   ///
   /// If null, this widget will create its own [TextEditingController].
@@ -73,12 +73,14 @@ class FormBuilderTextField extends FormBuilderField<String> {
   /// {@macro flutter.widgets.editableText.expands}
   final bool expands;
 
-  /// Configuration of toolbar options.
+  /// {@macro flutter.widgets.EditableText.contextMenuBuilder}
   ///
-  /// If not set, select all and paste will default to be enabled. Copy and cut
-  /// will be disabled if [obscureText] is true. If [readOnly] is true,
-  /// paste and cut will be disabled regardless.
-  final ToolbarOptions? toolbarOptions;
+  /// If not provided, will build a default menu based on the platform.
+  ///
+  /// See also:
+  ///
+  ///  * [AdaptiveTextSelectionToolbar], which is built by default.
+  final EditableTextContextMenuBuilder? contextMenuBuilder;
 
   /// {@macro flutter.widgets.editableText.showCursor}
   final bool? showCursor;
@@ -87,8 +89,8 @@ class FormBuilderTextField extends FormBuilderField<String> {
   /// part of the character counter is shown.
   static const int noMaxLength = -1;
 
-  /// The maximum number of characters (Unicode scalar values) to allow in the
-  /// text field.
+  /// The maximum number of characters (Unicode grapheme clusters) to allow in
+  /// the text field.
   ///
   /// If set, a character counter will be displayed below the
   /// field showing how many characters have been entered. If set to a number
@@ -96,9 +98,11 @@ class FormBuilderTextField extends FormBuilderField<String> {
   /// to [TextField.noMaxLength] then only the current character count is displayed.
   ///
   /// After [maxLength] characters have been input, additional input
-  /// is ignored, unless [maxLengthEnforced] is set to false. The text field
-  /// enforces the length with a [LengthLimitingTextInputFormatter], which is
-  /// evaluated after the supplied [inputFormatters], if any.
+  /// is ignored, unless [maxLengthEnforcement] is set to
+  /// [MaxLengthEnforcement.none].
+  ///
+  /// The text field enforces the length with a [LengthLimitingTextInputFormatter],
+  /// which is evaluated after the supplied [inputFormatters], if any.
   ///
   /// This value must be either null, [TextField.noMaxLength], or greater than 0.
   /// If null (the default) then there is no limit to the number of characters
@@ -108,36 +112,12 @@ class FormBuilderTextField extends FormBuilderField<String> {
   /// Whitespace characters (e.g. newline, space, tab) are included in the
   /// character count.
   ///
-  /// If [maxLengthEnforced] is set to false, then more than [maxLength]
-  /// characters may be entered, but the error counter and divider will
-  /// switch to the [decoration.errorStyle] when the limit is exceeded.
+  /// If [maxLengthEnforcement] is [MaxLengthEnforcement.none], then more than
+  /// [maxLength] characters may be entered, but the error counter and divider
+  /// will switch to the [decoration]'s [InputDecoration.errorStyle] when the
+  /// limit is exceeded.
   ///
-  /// ## Limitations
-  ///
-  /// The text field does not currently count Unicode grapheme clusters (i.e.
-  /// characters visible to the user), it counts Unicode scalar values, which
-  /// leaves out a number of useful possible characters (like many emoji and
-  /// composed characters), so this will be inaccurate in the presence of those
-  /// characters. If you expect to encounter these kinds of characters, be
-  /// generous in the maxLength used.
-  ///
-  /// For instance, the character "ö" can be represented as '\u{006F}\u{0308}',
-  /// which is the letter "o" followed by a composed diaeresis "¨", or it can
-  /// be represented as '\u{00F6}', which is the Unicode scalar value "LATIN
-  /// SMALL LETTER O WITH DIAERESIS". In the first case, the text field will
-  /// count two characters, and the second case will be counted as one
-  /// character, even though the user can see no difference in the input.
-  ///
-  /// Similarly, some emoji are represented by multiple scalar values. The
-  /// Unicode "THUMBS UP SIGN + MEDIUM SKIN TONE MODIFIER", "👍🏽", should be
-  /// counted as a single character, but because it is a combination of two
-  /// Unicode scalar values, '\u{1F44D}\u{1F3FD}', it is counted as two
-  /// characters.
-  ///
-  /// See also:
-  ///
-  ///  * [LengthLimitingTextInputFormatter] for more information on how it
-  ///    counts characters, and how it may differ from the intuitive meaning.
+  /// {@macro flutter.services.lengthLimitingTextInputFormatter.maxLength}
   final int? maxLength;
 
   final MaxLengthEnforcement? maxLengthEnforcement;
@@ -223,6 +203,17 @@ class FormBuilderTextField extends FormBuilderField<String> {
   /// {@endtemplate}
   final GestureTapCallback? onTap;
 
+  /// {@template flutter.material.textfield.onTapOutside}
+  /// A callback to be invoked when a tap is detected outside of this TapRegion
+  /// and any other region with the same groupId, if any.
+  ///
+  /// The PointerDownEvent passed to the function is the event that caused the
+  /// notification. If this region is part of a group (i.e. groupId is set),
+  /// then it's possible that the event may be outside of this immediate region,
+  /// although it will be within the region of one of the group members.
+  /// {@endtemplate}
+  final TapRegionCallback? onTapOutside;
+
   /// The cursor for a mouse pointer when it enters or is hovering over the
   /// widget.
   ///
@@ -284,22 +275,41 @@ class FormBuilderTextField extends FormBuilderField<String> {
   /// {@macro flutter.services.autofill.autofillHints}
   final Iterable<String>? autofillHints;
 
+  ///{@macro flutter.widgets.text_selection.TextMagnifierConfiguration.intro}
+  ///
+  ///{@macro flutter.widgets.magnifier.intro}
+  ///
+  ///{@macro flutter.widgets.text_selection.TextMagnifierConfiguration.details}
+  final TextMagnifierConfiguration? magnifierConfiguration;
+
+  /// By default `false`
+  final bool readOnly;
+
+  /// {@macro flutter.widgets.editableText.contentInsertionConfiguration}
+  final ContentInsertionConfiguration? contentInsertionConfiguration;
+
+  /// {@macro flutter.widgets.EditableText.spellCheckConfiguration}
+  ///
+  /// If [SpellCheckConfiguration.misspelledTextStyle] is not specified in this
+  /// configuration, then [materialMisspelledTextStyle] is used by default.
+  final SpellCheckConfiguration? spellCheckConfiguration;
+
   /// Creates a Material Design text field input.
   FormBuilderTextField({
-    Key? key,
-    //From Super
-    required String name,
-    FormFieldValidator<String>? validator,
+    super.key,
+    required super.name,
+    super.validator,
+    super.decoration,
+    super.onChanged,
+    super.valueTransformer,
+    super.enabled,
+    super.onSaved,
+    super.autovalidateMode = AutovalidateMode.disabled,
+    super.onReset,
+    super.focusNode,
+    super.restorationId,
     String? initialValue,
-    bool readOnly = false,
-    InputDecoration decoration = const InputDecoration(),
-    ValueChanged<String?>? onChanged,
-    ValueTransformer<String?>? valueTransformer,
-    bool enabled = true,
-    FormFieldSetter<String>? onSaved,
-    AutovalidateMode autovalidateMode = AutovalidateMode.disabled,
-    VoidCallback? onReset,
-    FocusNode? focusNode,
+    this.readOnly = false,
     this.maxLines = 1,
     this.obscureText = false,
     this.textCapitalization = TextCapitalization.none,
@@ -329,6 +339,7 @@ class FormBuilderTextField extends FormBuilderField<String> {
     this.minLines,
     this.showCursor,
     this.onTap,
+    this.onTapOutside,
     this.enableSuggestions = false,
     this.textAlignVertical,
     this.dragStartBehavior = DragStartBehavior.start,
@@ -337,11 +348,14 @@ class FormBuilderTextField extends FormBuilderField<String> {
     this.selectionWidthStyle = ui.BoxWidthStyle.tight,
     this.smartDashesType,
     this.smartQuotesType,
-    this.toolbarOptions,
     this.selectionHeightStyle = ui.BoxHeightStyle.tight,
     this.autofillHints,
     this.obscuringCharacter = '•',
     this.mouseCursor,
+    this.contextMenuBuilder = _defaultContextMenuBuilder,
+    this.magnifierConfiguration,
+    this.contentInsertionConfiguration,
+    this.spellCheckConfiguration,
   })  : assert(initialValue == null || controller == null),
         assert(minLines == null || minLines > 0),
         assert(maxLines == null || maxLines > 0),
@@ -357,24 +371,12 @@ class FormBuilderTextField extends FormBuilderField<String> {
             'Obscured fields cannot be multiline.'),
         assert(maxLength == null || maxLength > 0),
         super(
-          key: key,
           initialValue: controller != null ? controller.text : initialValue,
-          name: name,
-          validator: validator,
-          valueTransformer: valueTransformer,
-          onChanged: onChanged,
-          autovalidateMode: autovalidateMode,
-          onSaved: onSaved,
-          enabled: enabled,
-          onReset: onReset,
-          decoration: decoration,
-          focusNode: focusNode,
           builder: (FormFieldState<String?> field) {
             final state = field as _FormBuilderTextFieldState;
-            /*final effectiveDecoration = (decoration ?? const InputDecoration())
-                .applyDefaults(Theme.of(field.context).inputDecorationTheme);*/
 
             return TextField(
+              restorationId: restorationId,
               controller: state._effectiveController,
               focusNode: state.effectiveFocusNode,
               decoration: state.decoration,
@@ -398,6 +400,7 @@ class FormBuilderTextField extends FormBuilderField<String> {
               expands: expands,
               maxLength: maxLength,
               onTap: onTap,
+              onTapOutside: onTapOutside,
               onEditingComplete: onEditingComplete,
               onSubmitted: onSubmitted,
               inputFormatters: inputFormatters,
@@ -417,21 +420,33 @@ class FormBuilderTextField extends FormBuilderField<String> {
               selectionWidthStyle: selectionWidthStyle,
               smartDashesType: smartDashesType,
               smartQuotesType: smartQuotesType,
-              toolbarOptions: toolbarOptions,
               mouseCursor: mouseCursor,
+              contextMenuBuilder: contextMenuBuilder,
               obscuringCharacter: obscuringCharacter,
               autofillHints: autofillHints,
+              magnifierConfiguration: magnifierConfiguration,
+              contentInsertionConfiguration: contentInsertionConfiguration,
+              spellCheckConfiguration: spellCheckConfiguration,
             );
           },
         );
 
+  static Widget _defaultContextMenuBuilder(
+    BuildContext context,
+    EditableTextState editableTextState,
+  ) {
+    return AdaptiveTextSelectionToolbar.editableText(
+      editableTextState: editableTextState,
+    );
+  }
+
   @override
-  FormBuilderFieldState<FormBuilderTextField, String> createState() =>
+  FormBuilderFieldDecorationState<FormBuilderTextField, String> createState() =>
       _FormBuilderTextFieldState();
 }
 
 class _FormBuilderTextFieldState
-    extends FormBuilderFieldState<FormBuilderTextField, String> {
+    extends FormBuilderFieldDecorationState<FormBuilderTextField, String> {
   TextEditingController? get _effectiveController =>
       widget.controller ?? _controller;
 

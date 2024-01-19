@@ -1,9 +1,10 @@
-import 'package:collection/collection.dart' show IterableExtension;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:flutter_form_builder/src/extensions/generic_validator.dart';
 
 /// Field for Dropdown button
-class FormBuilderDropdown<T> extends FormBuilderField<T> {
+class FormBuilderDropdown<T> extends FormBuilderFieldDecoration<T> {
   /// The list of items the user can select.
   ///
   /// If the [onChanged] callback is null or the list of items is null
@@ -14,13 +15,6 @@ class FormBuilderDropdown<T> extends FormBuilderField<T> {
   /// If [decoration.hint] and variations is non-null and [disabledHint] is null,
   /// the [decoration.hint] widget will be displayed instead.
   final List<DropdownMenuItem<T>> items;
-
-  /// A placeholder widget that is displayed by the dropdown button.
-  ///
-  /// If [value] is null, this widget is displayed as a placeholder for
-  /// the dropdown button's value. This widget is also displayed if the button
-  /// is disabled ([items] or [onChanged] is null) and [disabledHint] is null.
-  final Widget? hint;
 
   /// A message to show when the dropdown is disabled.
   ///
@@ -44,10 +38,12 @@ class FormBuilderDropdown<T> extends FormBuilderField<T> {
   /// from the list corresponds to the [DropdownMenuItem] of the same index
   /// in [items].
   ///
-  /// {@tool dartpad --template=stateful_widget_scaffold}
-  ///
+  /// {@tool dartpad}
   /// This sample shows a `DropdownButton` with a button with [Text] that
   /// corresponds to but is unique from [DropdownMenuItem].
+  ///
+  /// ** See code in examples/api/lib/material/dropdown/dropdown_button.selected_item_builder.0.dart **
+  /// {@end-tool}
   ///
   /// If this callback is null, the [DropdownMenuItem] from [items]
   /// that matches [value] will be displayed.
@@ -179,9 +175,6 @@ class FormBuilderDropdown<T> extends FormBuilderField<T> {
   /// instead.
   final Color? dropdownColor;
 
-  final bool allowClear;
-  final Widget clearIcon;
-
   /// The maximum height of the menu.
   ///
   /// The maximum height of the menu must be at least one row shorter than
@@ -192,8 +185,6 @@ class FormBuilderDropdown<T> extends FormBuilderField<T> {
   /// mentioned above, then the menu defaults to being padded at the top
   /// and bottom of the menu by at one menu item's height.
   final double? menuMaxHeight;
-
-  final bool shouldRequestFocus;
 
   /// Whether detected gestures should provide acoustic and/or haptic feedback.
   ///
@@ -241,25 +232,19 @@ class FormBuilderDropdown<T> extends FormBuilderField<T> {
     super.autovalidateMode = AutovalidateMode.disabled,
     super.onReset,
     super.focusNode,
+    super.restorationId,
     required this.items,
     this.isExpanded = true,
     this.isDense = true,
     this.elevation = 8,
     this.iconSize = 24.0,
-    @Deprecated('Please use decoration.hint and variations to set your desired label')
-        this.hint,
     this.style,
     this.disabledHint,
     this.icon,
     this.iconDisabledColor,
     this.iconEnabledColor,
-    @Deprecated('Please use decoration.suffix to set your desired behavior')
-        this.allowClear = false,
-    @Deprecated('Please use decoration.suffixIcon to set your desired icon')
-        this.clearIcon = const Icon(Icons.close),
     this.onTap,
     this.autofocus = false,
-    this.shouldRequestFocus = false,
     this.dropdownColor,
     this.focusColor,
     this.itemHeight,
@@ -272,59 +257,75 @@ class FormBuilderDropdown<T> extends FormBuilderField<T> {
           builder: (FormFieldState<T?> field) {
             final state = field as _FormBuilderDropdownState<T>;
 
-            void changeValue(T? value) {
-              if (shouldRequestFocus) {
-                state.requestFocus();
-              }
-              state.didChange(value);
-            }
-
-            return InputDecorator(
+            final hasValue = items.map((e) => e.value).contains(field.value);
+            return DropdownButtonFormField<T>(
+              isExpanded: isExpanded,
               decoration: state.decoration,
-              isEmpty: state.value == null,
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<T>(
-                  isExpanded: isExpanded,
-                  hint: hint,
-                  items: items,
-                  value: field.value,
-                  style: style,
-                  isDense: isDense,
-                  disabledHint: field.value != null
-                      ? (items
-                              .firstWhereOrNull((dropDownItem) =>
-                                  dropDownItem.value == field.value)
-                              ?.child ??
-                          Text(field.value.toString()))
-                      : disabledHint,
-                  elevation: elevation,
-                  iconSize: iconSize,
-                  icon: icon,
-                  iconDisabledColor: iconDisabledColor,
-                  iconEnabledColor: iconEnabledColor,
-                  onChanged:
-                      state.enabled ? (value) => changeValue(value) : null,
-                  onTap: onTap,
-                  focusNode: state.effectiveFocusNode,
-                  autofocus: autofocus,
-                  dropdownColor: dropdownColor,
-                  focusColor: focusColor,
-                  itemHeight: itemHeight,
-                  selectedItemBuilder: selectedItemBuilder,
-                  menuMaxHeight: menuMaxHeight,
-                  borderRadius: borderRadius,
-                  enableFeedback: enableFeedback,
-                  alignment: alignment,
-                ),
-              ),
+              items: items,
+              value: hasValue ? field.value : null,
+              style: style,
+              isDense: isDense,
+              disabledHint: hasValue
+                  ? items
+                      .firstWhere(
+                          (dropDownItem) => dropDownItem.value == field.value)
+                      .child
+                  : disabledHint,
+              elevation: elevation,
+              iconSize: iconSize,
+              icon: icon,
+              iconDisabledColor: iconDisabledColor,
+              iconEnabledColor: iconEnabledColor,
+              onChanged:
+                  state.enabled ? (T? value) => state.didChange(value) : null,
+              onTap: onTap,
+              focusNode: state.effectiveFocusNode,
+              autofocus: autofocus,
+              dropdownColor: dropdownColor,
+              focusColor: focusColor,
+              itemHeight: itemHeight,
+              selectedItemBuilder: selectedItemBuilder,
+              menuMaxHeight: menuMaxHeight,
+              borderRadius: borderRadius,
+              enableFeedback: enableFeedback,
+              alignment: alignment,
             );
           },
         );
 
   @override
-  FormBuilderFieldState<FormBuilderDropdown<T>, T> createState() =>
+  FormBuilderFieldDecorationState<FormBuilderDropdown<T>, T> createState() =>
       _FormBuilderDropdownState<T>();
 }
 
 class _FormBuilderDropdownState<T>
-    extends FormBuilderFieldState<FormBuilderDropdown<T>, T> {}
+    extends FormBuilderFieldDecorationState<FormBuilderDropdown<T>, T> {
+  @override
+  void didUpdateWidget(covariant FormBuilderDropdown<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final oldValues = oldWidget.items.map((e) => e.value).toList();
+    final currentlyValues = widget.items.map((e) => e.value).toList();
+    final oldChilds = oldWidget.items.map((e) => e.child.toString()).toList();
+    final currentlyChilds =
+        widget.items.map((e) => e.child.toString()).toList();
+
+    if (!currentlyValues.contains(initialValue) &&
+        !initialValue.emptyValidator()) {
+      assert(
+        currentlyValues.contains(initialValue) && initialValue.emptyValidator(),
+        'The initialValue [$initialValue] is not in the list of items or is not null or empty. '
+        'Please provide one of the items as the initialValue or update your initial value. '
+        'By default, will apply [null] to field value',
+      );
+      setValue(null);
+    }
+
+    if ((!listEquals(oldChilds, currentlyChilds) ||
+            !listEquals(oldValues, currentlyValues)) &&
+        (currentlyValues.contains(initialValue) ||
+            initialValue.emptyValidator())) {
+      setValue(initialValue);
+    }
+  }
+}

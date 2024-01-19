@@ -7,7 +7,8 @@ import 'package:intl/intl.dart' as intl;
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 /// Field for selecting a range of dates
-class FormBuilderDateRangePicker extends FormBuilderField<DateTimeRange> {
+class FormBuilderDateRangePicker
+    extends FormBuilderFieldDecoration<DateTimeRange> {
   //TODO: Add documentation
   final int maxLines;
   final TextInputType? keyboardType;
@@ -34,6 +35,7 @@ class FormBuilderDateRangePicker extends FormBuilderField<DateTimeRange> {
   final EdgeInsets scrollPadding;
   final bool enableInteractiveSelection;
   final InputCounterWidgetBuilder? buildCounter;
+  final MouseCursor? mouseCursor;
   final bool expands;
   final int? minLines;
   final bool showCursor;
@@ -64,19 +66,19 @@ class FormBuilderDateRangePicker extends FormBuilderField<DateTimeRange> {
 
   /// Creates field for selecting a range of dates
   FormBuilderDateRangePicker({
-    Key? key,
-    //From Super
-    required String name,
-    FormFieldValidator<DateTimeRange>? validator,
-    DateTimeRange? initialValue,
-    InputDecoration decoration = const InputDecoration(),
-    ValueChanged<DateTimeRange?>? onChanged,
-    ValueTransformer<DateTimeRange?>? valueTransformer,
-    bool enabled = true,
-    FormFieldSetter<DateTimeRange>? onSaved,
-    AutovalidateMode autovalidateMode = AutovalidateMode.disabled,
-    VoidCallback? onReset,
-    FocusNode? focusNode,
+    super.key,
+    required super.name,
+    super.validator,
+    super.initialValue,
+    super.decoration,
+    super.onChanged,
+    super.valueTransformer,
+    super.enabled,
+    super.onSaved,
+    super.autovalidateMode = AutovalidateMode.disabled,
+    super.onReset,
+    super.focusNode,
+    super.restorationId,
     required this.firstDate,
     required this.lastDate,
     this.format,
@@ -105,6 +107,7 @@ class FormBuilderDateRangePicker extends FormBuilderField<DateTimeRange> {
     this.cursorColor,
     this.keyboardAppearance,
     this.buildCounter,
+    this.mouseCursor,
     this.expands = false,
     this.minLines,
     this.showCursor = false,
@@ -121,7 +124,6 @@ class FormBuilderDateRangePicker extends FormBuilderField<DateTimeRange> {
     this.fieldStartHintText,
     this.fieldStartLabelText,
     this.helpText,
-    // this.initialDateRange,
     this.initialEntryMode = DatePickerEntryMode.calendar,
     this.routeSettings,
     this.saveText,
@@ -129,18 +131,6 @@ class FormBuilderDateRangePicker extends FormBuilderField<DateTimeRange> {
     this.allowClear = false,
     this.clearIcon,
   }) : super(
-          key: key,
-          initialValue: initialValue,
-          name: name,
-          validator: validator,
-          valueTransformer: valueTransformer,
-          onChanged: onChanged,
-          autovalidateMode: autovalidateMode,
-          onSaved: onSaved,
-          enabled: enabled,
-          onReset: onReset,
-          decoration: decoration,
-          focusNode: focusNode,
           builder: (FormFieldState<DateTimeRange?> field) {
             final state = field as _FormBuilderDateRangePickerState;
 
@@ -158,6 +148,7 @@ class FormBuilderDateRangePicker extends FormBuilderField<DateTimeRange> {
               autocorrect: autocorrect,
               autofocus: autofocus,
               buildCounter: buildCounter,
+              mouseCursor: mouseCursor,
               cursorColor: cursorColor,
               cursorRadius: cursorRadius,
               cursorWidth: cursorWidth,
@@ -182,7 +173,7 @@ class FormBuilderDateRangePicker extends FormBuilderField<DateTimeRange> {
         );
 
   @override
-  FormBuilderFieldState<FormBuilderDateRangePicker, DateTimeRange>
+  FormBuilderFieldDecorationState<FormBuilderDateRangePicker, DateTimeRange>
       createState() => _FormBuilderDateRangePickerState();
 
   static String tryFormat(DateTime date, intl.DateFormat format) {
@@ -195,8 +186,8 @@ class FormBuilderDateRangePicker extends FormBuilderField<DateTimeRange> {
   }
 }
 
-class _FormBuilderDateRangePickerState
-    extends FormBuilderFieldState<FormBuilderDateRangePicker, DateTimeRange> {
+class _FormBuilderDateRangePickerState extends FormBuilderFieldDecorationState<
+    FormBuilderDateRangePicker, DateTimeRange> {
   late TextEditingController _effectiveController;
 
   @override
@@ -290,7 +281,7 @@ class _FormBuilderDateRangePickerState
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(maxWidth: 24, maxHeight: 24),
               onPressed: () {
-                requestFocus();
+                focus();
                 didChange(null);
                 effectiveFocusNode.unfocus();
               },

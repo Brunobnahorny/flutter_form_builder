@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 /// Field with chips that acts like a list checkboxes.
-class FormBuilderFilterChip<T> extends FormBuilderField<List<T>> {
+class FormBuilderFilterChip<T> extends FormBuilderFieldDecoration<List<T>> {
   //TODO: Add documentation
-  final bool shouldRequestFocus;
   final Color? backgroundColor;
   final Color? disabledColor;
   final Color? selectedColor;
@@ -36,15 +35,16 @@ class FormBuilderFilterChip<T> extends FormBuilderField<List<T>> {
 
   /// Creates field with chips that acts like a list checkboxes.
   FormBuilderFilterChip({
-    AutovalidateMode autovalidateMode = AutovalidateMode.disabled,
-    bool enabled = true,
-    FocusNode? focusNode,
-    FormFieldSetter<List<T>>? onSaved,
-    FormFieldValidator<List<T>>? validator,
-    InputDecoration decoration = const InputDecoration(),
-    Key? key,
-    List<T>? initialValue,
-    required String name, // From Super
+    super.autovalidateMode = AutovalidateMode.disabled,
+    super.enabled,
+    super.focusNode,
+    super.onSaved,
+    super.validator,
+    super.decoration,
+    super.key,
+    super.initialValue,
+    required super.name,
+    super.restorationId,
     required this.options,
     this.alignment = WrapAlignment.start,
     this.avatarBorder = const CircleBorder(),
@@ -67,28 +67,15 @@ class FormBuilderFilterChip<T> extends FormBuilderField<List<T>> {
     this.selectedShadowColor,
     this.shadowColor,
     this.shape,
-    this.shouldRequestFocus = false,
     this.showCheckmark = true,
     this.spacing = 0.0,
     this.textDirection,
     this.verticalDirection = VerticalDirection.down,
-    ValueChanged<List<T>?>? onChanged,
-    ValueTransformer<List<T>?>? valueTransformer,
-    VoidCallback? onReset,
+    super.onChanged,
+    super.valueTransformer,
+    super.onReset,
   })  : assert((maxChips == null) || ((initialValue ?? []).length <= maxChips)),
         super(
-          autovalidateMode: autovalidateMode,
-          decoration: decoration,
-          enabled: enabled,
-          focusNode: focusNode,
-          initialValue: initialValue,
-          key: key,
-          name: name,
-          onChanged: onChanged,
-          onReset: onReset,
-          onSaved: onSaved,
-          validator: validator,
-          valueTransformer: valueTransformer,
           builder: (FormFieldState<List<T>?> field) {
             final state = field as _FormBuilderFilterChipState<T>;
             final fieldValue = field.value ?? [];
@@ -116,14 +103,10 @@ class FormBuilderFilterChip<T> extends FormBuilderField<List<T>> {
                                   fieldValue.contains(option.value))
                           ? (selected) {
                               final currentValue = [...fieldValue];
-                              if (selected) {
-                                currentValue.add(option.value);
-                              } else {
-                                currentValue.remove(option.value);
-                              }
-                              if (shouldRequestFocus) {
-                                state.requestFocus();
-                              }
+                              selected
+                                  ? currentValue.add(option.value)
+                                  : currentValue.remove(option.value);
+
                               field.didChange(currentValue);
                             }
                           : null,
@@ -151,9 +134,9 @@ class FormBuilderFilterChip<T> extends FormBuilderField<List<T>> {
         );
 
   @override
-  FormBuilderFieldState<FormBuilderFilterChip<T>, List<T>> createState() =>
-      _FormBuilderFilterChipState<T>();
+  FormBuilderFieldDecorationState<FormBuilderFilterChip<T>, List<T>>
+      createState() => _FormBuilderFilterChipState<T>();
 }
 
-class _FormBuilderFilterChipState<T>
-    extends FormBuilderFieldState<FormBuilderFilterChip<T>, List<T>> {}
+class _FormBuilderFilterChipState<T> extends FormBuilderFieldDecorationState<
+    FormBuilderFilterChip<T>, List<T>> {}

@@ -6,14 +6,18 @@ final formKey = GlobalKey<FormBuilderState>();
 Widget buildTestableFieldWidget(
   Widget widget, {
   Map<String, dynamic> initialValue = const {},
+  bool skipDisabled = false,
   bool clearValueOnUnregister = false,
+  AutovalidateMode? autovalidateMode,
 }) {
   return MaterialApp(
     home: Scaffold(
       body: FormBuilder(
         key: formKey,
+        skipDisabled: skipDisabled,
         initialValue: initialValue,
         clearValueOnUnregister: clearValueOnUnregister,
+        autovalidateMode: autovalidateMode,
         child: widget,
       ),
     ),

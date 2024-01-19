@@ -10,7 +10,7 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 enum InputType { date, time, both }
 
 /// Field for `Date`, `Time` and `DateTime` input
-class FormBuilderDateTimePicker extends FormBuilderField<DateTime> {
+class FormBuilderDateTimePicker extends FormBuilderFieldDecoration<DateTime> {
   /// The date/time picker dialogs to show.
   final InputType inputType;
 
@@ -99,6 +99,7 @@ class FormBuilderDateTimePicker extends FormBuilderField<DateTime> {
   final VoidCallback? onEditingComplete;
 
   final InputCounterWidgetBuilder? buildCounter;
+  final MouseCursor? mouseCursor;
 
   final Radius? cursorRadius;
   final Color? cursorColor;
@@ -127,19 +128,19 @@ class FormBuilderDateTimePicker extends FormBuilderField<DateTime> {
 
   /// Creates field for `Date`, `Time` and `DateTime` input
   FormBuilderDateTimePicker({
-    Key? key,
-    //From Super
-    required String name,
-    FormFieldValidator<DateTime>? validator,
-    DateTime? initialValue,
-    InputDecoration decoration = const InputDecoration(),
-    ValueChanged<DateTime?>? onChanged,
-    ValueTransformer<DateTime?>? valueTransformer,
-    bool enabled = true,
-    FormFieldSetter<DateTime>? onSaved,
-    AutovalidateMode autovalidateMode = AutovalidateMode.disabled,
-    VoidCallback? onReset,
-    FocusNode? focusNode,
+    super.key,
+    required super.name,
+    super.validator,
+    super.initialValue,
+    super.decoration,
+    super.onChanged,
+    super.valueTransformer,
+    super.enabled,
+    super.onSaved,
+    super.autovalidateMode = AutovalidateMode.disabled,
+    super.onReset,
+    super.focusNode,
+    super.restorationId,
     this.inputType = InputType.both,
     this.scrollPadding = const EdgeInsets.all(20.0),
     this.cursorWidth = 2.0,
@@ -178,6 +179,7 @@ class FormBuilderDateTimePicker extends FormBuilderField<DateTime> {
     this.textInputAction,
     this.onEditingComplete,
     this.buildCounter,
+    this.mouseCursor,
     this.cursorRadius,
     this.cursorColor,
     this.keyboardAppearance,
@@ -194,18 +196,6 @@ class FormBuilderDateTimePicker extends FormBuilderField<DateTime> {
     this.anchorPoint,
     this.onEntryModeChanged,
   }) : super(
-          key: key,
-          initialValue: initialValue,
-          name: name,
-          validator: validator,
-          valueTransformer: valueTransformer,
-          onChanged: onChanged,
-          autovalidateMode: autovalidateMode,
-          onSaved: onSaved,
-          enabled: enabled,
-          onReset: onReset,
-          decoration: decoration,
-          focusNode: focusNode,
           builder: (FormFieldState<DateTime?> field) {
             final state = field as _FormBuilderDateTimePickerState;
 
@@ -231,6 +221,7 @@ class FormBuilderDateTimePicker extends FormBuilderField<DateTime> {
               style: style,
               onEditingComplete: onEditingComplete,
               buildCounter: buildCounter,
+              mouseCursor: mouseCursor,
               cursorColor: cursorColor,
               cursorRadius: cursorRadius,
               cursorWidth: cursorWidth,
@@ -246,12 +237,12 @@ class FormBuilderDateTimePicker extends FormBuilderField<DateTime> {
         );
 
   @override
-  FormBuilderFieldState<FormBuilderDateTimePicker, DateTime> createState() =>
-      _FormBuilderDateTimePickerState();
+  FormBuilderFieldDecorationState<FormBuilderDateTimePicker, DateTime>
+      createState() => _FormBuilderDateTimePickerState();
 }
 
-class _FormBuilderDateTimePickerState
-    extends FormBuilderFieldState<FormBuilderDateTimePicker, DateTime> {
+class _FormBuilderDateTimePickerState extends FormBuilderFieldDecorationState<
+    FormBuilderDateTimePicker, DateTime> {
   late TextEditingController _textFieldController;
 
   late DateFormat _dateFormat;
@@ -307,10 +298,11 @@ class _FormBuilderDateTimePickerState
         newValue = await _showDatePicker(context, currentValue);
         break;
       case InputType.time:
-        final newTime = await _showTimePicker(context, currentValue);
-        newValue = null != newTime ? convert(newTime) : null;
+        if (!context.mounted) return null;
+        newValue = convert(await _showTimePicker(context, currentValue));
         break;
       case InputType.both:
+        if (!context.mounted) return null;
         final date = await _showDatePicker(context, currentValue);
         if (date != null) {
           if (!mounted) break;
@@ -321,6 +313,7 @@ class _FormBuilderDateTimePickerState
       default:
         throw 'Unexpected input type ${widget.inputType}';
     }
+    if (!mounted) return null;
     final finalValue = newValue ?? currentValue;
     didChange(finalValue);
     return finalValue;
@@ -350,17 +343,32 @@ class _FormBuilderDateTimePickerState
       routeSettings: widget.routeSettings,
       currentDate: widget.currentDate,
       anchorPoint: widget.anchorPoint,
+      keyboardType: widget.keyboardType,
     );
   }
 
   Future<TimeOfDay?> _showTimePicker(
       BuildContext context, DateTime? currentValue) async {
+    var builder = widget.transitionBuilder;
+    if (widget.locale != null) {
+      builder = (context, child) {
+        var transitionBuilder = widget.transitionBuilder;
+        return Localizations.override(
+          context: context,
+          locale: widget.locale,
+          child: transitionBuilder == null
+              ? child
+              : transitionBuilder(context, child),
+        );
+      };
+    }
+
     final timePickerResult = await showTimePicker(
       context: context,
       initialTime: currentValue != null
           ? TimeOfDay.fromDateTime(currentValue)
           : widget.initialTime,
-      builder: widget.transitionBuilder,
+      builder: builder,
       useRootNavigator: widget.useRootNavigator,
       routeSettings: widget.routeSettings,
       initialEntryMode: widget.timePickerInitialEntryMode,

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 /// On/Off switch field
-class FormBuilderSwitch extends FormBuilderField<bool> {
+class FormBuilderSwitch extends FormBuilderFieldDecoration<bool> {
   /// The primary content of the list tile.
   ///
   /// Typically a [Text] widget.
@@ -21,12 +21,12 @@ class FormBuilderSwitch extends FormBuilderField<bool> {
 
   /// The color to use when this switch is on.
   ///
-  /// Defaults to [ThemeData.toggleableActiveColor].
+  /// Defaults to [ColorScheme.secondary].
   final Color? activeColor;
 
   /// The color to use on the track when this switch is on.
   ///
-  /// Defaults to [ThemeData.toggleableActiveColor] with the opacity set at 50%.
+  /// Defaults to [ColorScheme.secondary] with the opacity set at 50%.
   ///
   /// Ignored if this switch is created with [Switch.adaptive].
   final Color? activeTrackColor;
@@ -64,7 +64,16 @@ class FormBuilderSwitch extends FormBuilderField<bool> {
   /// is used.
   final EdgeInsets contentPadding;
 
-  /// {@macro flutter.cupertino.switch.dragStartBehavior}
+  /// Where to place the control in widgets that use [ListTile] to position a
+  /// control next to a label.
+  ///
+  /// See also:
+  ///
+  ///  * [CheckboxListTile], which combines a [ListTile] with a [Checkbox].
+  ///  * [RadioListTile], which combines a [ListTile] with a [Radio] button.
+  ///  * [SwitchListTile], which combines a [ListTile] with a [Switch].
+  ///  * [ExpansionTile], which combines a [ListTile] with a button that expands
+  ///    or collapses the tile to reveal or hide the children.
   final ListTileControlAffinity controlAffinity;
 
   /// Whether to render icons and text in the [activeColor].
@@ -76,26 +85,24 @@ class FormBuilderSwitch extends FormBuilderField<bool> {
   /// Normally, this property is left to its default value, false.
   final bool selected;
 
-  final bool shouldRequestFocus;
-
   /// {@macro flutter.widgets.Focus.autofocus}
   final bool autofocus;
 
   /// Creates On/Off switch field
   FormBuilderSwitch({
-    Key? key,
-    //From Super
-    required String name,
-    FormFieldValidator<bool>? validator,
-    bool? initialValue,
-    InputDecoration decoration = const InputDecoration(),
-    ValueChanged<bool?>? onChanged,
-    ValueTransformer<bool?>? valueTransformer,
-    bool enabled = true,
-    FormFieldSetter<bool>? onSaved,
-    AutovalidateMode autovalidateMode = AutovalidateMode.disabled,
-    VoidCallback? onReset,
-    FocusNode? focusNode,
+    super.key,
+    required super.name,
+    super.validator,
+    super.initialValue,
+    super.decoration,
+    super.onChanged,
+    super.valueTransformer,
+    super.enabled,
+    super.onSaved,
+    super.autovalidateMode = AutovalidateMode.disabled,
+    super.onReset,
+    super.focusNode,
+    super.restorationId,
     required this.title,
     this.activeColor,
     this.activeTrackColor,
@@ -108,21 +115,8 @@ class FormBuilderSwitch extends FormBuilderField<bool> {
     this.controlAffinity = ListTileControlAffinity.trailing,
     this.contentPadding = EdgeInsets.zero,
     this.autofocus = false,
-    this.shouldRequestFocus = false,
     this.selected = false,
   }) : super(
-          key: key,
-          initialValue: initialValue,
-          name: name,
-          validator: validator,
-          valueTransformer: valueTransformer,
-          onChanged: onChanged,
-          autovalidateMode: autovalidateMode,
-          onSaved: onSaved,
-          enabled: enabled,
-          onReset: onReset,
-          decoration: decoration,
-          focusNode: focusNode,
           builder: (FormFieldState<bool?> field) {
             final state = field as _FormBuilderSwitchState;
 
@@ -136,9 +130,6 @@ class FormBuilderSwitch extends FormBuilderField<bool> {
                 value: state.value ?? false,
                 onChanged: state.enabled
                     ? (value) {
-                        if (shouldRequestFocus) {
-                          state.requestFocus();
-                        }
                         field.didChange(value);
                       }
                     : null,
@@ -159,9 +150,9 @@ class FormBuilderSwitch extends FormBuilderField<bool> {
         );
 
   @override
-  FormBuilderFieldState<FormBuilderSwitch, bool> createState() =>
+  FormBuilderFieldDecorationState<FormBuilderSwitch, bool> createState() =>
       _FormBuilderSwitchState();
 }
 
 class _FormBuilderSwitchState
-    extends FormBuilderFieldState<FormBuilderSwitch, bool> {}
+    extends FormBuilderFieldDecorationState<FormBuilderSwitch, bool> {}

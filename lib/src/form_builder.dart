@@ -1,6 +1,4 @@
-import 'dart:developer';
-
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 /// A container for form fields.
@@ -11,17 +9,38 @@ class FormBuilder extends StatefulWidget {
   /// will rebuild.
   final VoidCallback? onChanged;
 
-  /// Enables the form to veto attempts by the user to dismiss the [ModalRoute]
-  /// that contains the form.
+  /// {@macro flutter.widgets.navigator.onPopInvoked}
   ///
-  /// If the callback returns a Future that resolves to false, the form's route
-  /// will not be popped.
+  /// {@tool dartpad}
+  /// This sample demonstrates how to use this parameter to show a confirmation
+  /// dialog when a navigation pop would cause form data to be lost.
+  ///
+  /// ** See code in examples/api/lib/widgets/form/form.1.dart **
+  /// {@end-tool}
   ///
   /// See also:
   ///
-  ///  * [WillPopScope], another widget that provides a way to intercept the
+  ///  * [canPop], which also comes from [PopScope] and is often used in
+  ///    conjunction with this parameter.
+  ///  * [PopScope.onPopInvoked], which is what [Form] delegates to internally.ther widget that provides a way to intercept the
   ///    back button.
-  final WillPopCallback? onWillPop;
+  final void Function(bool)? onPopInvoked;
+
+  /// {@macro flutter.widgets.PopScope.canPop}
+  ///
+  /// {@tool dartpad}
+  /// This sample demonstrates how to use this parameter to show a confirmation
+  /// dialog when a navigation pop would cause form data to be lost.
+  ///
+  /// ** See code in examples/api/lib/widgets/form/form.1.dart **
+  /// {@end-tool}
+  ///
+  /// See also:
+  ///
+  ///  * [onPopInvoked], which also comes from [PopScope] and is often used in
+  ///    conjunction with this parameter.
+  ///  * [PopScope.canPop], which is what [Form] delegates to internally.
+  final bool? canPop;
 
   /// The widget below this widget in the tree.
   ///
@@ -45,8 +64,11 @@ class FormBuilder extends StatefulWidget {
 
   /// Whether the form should ignore submitting values from fields where
   /// `enabled` is `false`.
+  ///
   /// This behavior is common in HTML forms where _readonly_ values are not
   /// submitted when the form is submitted.
+  ///
+  /// `true` = Disabled / `false` = Read only
   ///
   /// When `true`, the final form value will not contain disabled fields.
   /// Default is `false`.
@@ -59,9 +81,6 @@ class FormBuilder extends StatefulWidget {
   /// When `false` all the form fields will be disabled - won't accept input -
   /// and their enabled state will be ignored.
   final bool enabled;
-
-  /// Whether the form should auto focus on the first field that fails validation.
-  final bool autoFocusOnValidationFailure;
 
   /// Whether to clear the internal value of a field when it is unregistered.
   ///
@@ -79,17 +98,17 @@ class FormBuilder extends StatefulWidget {
   ///
   /// The [child] argument must not be null.
   const FormBuilder({
-    Key? key,
+    super.key,
     required this.child,
     this.onChanged,
     this.autovalidateMode,
-    this.onWillPop,
+    this.onPopInvoked,
     this.initialValue = const <String, dynamic>{},
     this.skipDisabled = false,
     this.enabled = true,
-    this.autoFocusOnValidationFailure = false,
     this.clearValueOnUnregister = false,
-  }) : super(key: key);
+    this.canPop,
+  });
 
   static FormBuilderState? of(BuildContext context) =>
       context.findAncestorStateOfType<FormBuilderState>();
@@ -98,17 +117,51 @@ class FormBuilder extends StatefulWidget {
   FormBuilderState createState() => FormBuilderState();
 }
 
+/// A type alias for a map of form fields.
+typedef FormBuilderFields
+    = Map<String, FormBuilderFieldState<FormBuilderField<dynamic>, dynamic>>;
+
 class FormBuilderState extends State<FormBuilder> {
-  final _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final FormBuilderFields _fields = {};
+  final Map<String, dynamic> _instantValue = {};
+  final Map<String, dynamic> _savedValue = {};
+  // Because dart type system will not accept ValueTransformer<dynamic>
+  final Map<String, Function> _transformers = {};
+  bool _focusOnInvalid = true;
+
+  /// Will be true if will focus on invalid field when validate
+  ///
+  /// Only used to internal logic
+  bool get focusOnInvalid => _focusOnInvalid;
 
   bool get enabled => widget.enabled;
 
-  final _fields = <String, FormBuilderFieldState>{};
+  /// Verify if all fields on form are valid.
+  bool get isValid => fields.values.every((field) => field.isValid);
 
-  //because dart type system will not accept ValueTransformer<dynamic>
-  final _transformers = <String, Function>{};
-  final _instantValue = <String, dynamic>{};
-  final _savedValue = <String, dynamic>{};
+  /// Will be true if some field on form are dirty.
+  ///
+  /// Dirty: The value of field is changed by user or by logic code.
+  bool get isDirty => fields.values.any((field) => field.isDirty);
+
+  /// Will be true if some field on form are touched.
+  ///
+  /// Touched: The field is focused by user or by logic code.
+  bool get isTouched => fields.values.any((field) => field.isTouched);
+
+  /// Get a map of errors
+  Map<String, String> get errors => {
+        for (var element
+            in fields.entries.where((element) => element.value.hasError))
+          element.key.toString(): element.value.errorText ?? ''
+      };
+
+  /// Get initialValue.
+  Map<String, dynamic> get initialValue => widget.initialValue;
+
+  /// Get all fields of form.
+  FormBuilderFields get fields => _fields;
 
   Map<String, dynamic> get instantValue =>
       Map<String, dynamic>.unmodifiable(_instantValue.map((key, value) =>
@@ -118,11 +171,6 @@ class FormBuilderState extends State<FormBuilder> {
   Map<String, dynamic> get value =>
       Map<String, dynamic>.unmodifiable(_savedValue.map((key, value) =>
           MapEntry(key, _transformers[key]?.call(value) ?? value)));
-
-  /// Returns values after saving
-  Map<String, dynamic> get initialValue => widget.initialValue;
-
-  Map<String, FormBuilderFieldState> get fields => _fields;
 
   dynamic transformValue<T>(String name, T? v) {
     final t = _transformers[name];
@@ -138,26 +186,13 @@ class FormBuilderState extends State<FormBuilder> {
         initialValue[name];
   }
 
-  void setInternalFieldValue<T>(String name, T? value,
-      {required bool isSetState}) {
+  void setInternalFieldValue<T>(String name, T? value) {
     _instantValue[name] = value;
-    if (isSetState) {
-      setState(() {});
-    }
     widget.onChanged?.call();
   }
 
-  bool get isValid =>
-      fields.values.where((element) => !element.isValid).isEmpty;
-
-  void removeInternalFieldValue(
-    String name, {
-    required bool isSetState,
-  }) {
+  void removeInternalFieldValue(String name) {
     _instantValue.remove(name);
-    if (isSetState) {
-      setState(() {});
-    }
   }
 
   void registerField(String name, FormBuilderFieldState field) {
@@ -178,16 +213,11 @@ class FormBuilderState extends State<FormBuilder> {
 
     _fields[name] = field;
     field.registerTransformer(_transformers);
-    if (oldField != null) {
-      // ignore: invalid_use_of_protected_member
-      field.setValue(oldField.value, populateForm: false);
-    } else {
-      // ignore: invalid_use_of_protected_member
-      field.setValue(
-        _instantValue[name] ??= field.initialValue,
-        populateForm: false,
-      );
-    }
+
+    field.setValue(
+      oldField?.value ?? (_instantValue[name] ??= field.initialValue),
+      populateForm: false,
+    );
   }
 
   void unregisterField(String name, FormBuilderFieldState field) {
@@ -216,50 +246,86 @@ class FormBuilderState extends State<FormBuilder> {
 
   void save() {
     _formKey.currentState!.save();
-    //copy values from instant to saved
+    // Copy values from instant to saved
     _savedValue.clear();
     _savedValue.addAll(_instantValue);
   }
 
+  @Deprecated(
+      'Will be remove to avoid redundancy. Use fields[name]?.invalidate(errorText) instead')
   void invalidateField({required String name, String? errorText}) =>
       fields[name]?.invalidate(errorText ?? '');
 
+  @Deprecated(
+      'Will be remove to avoid redundancy. Use fields.first.invalidate(errorText) instead')
   void invalidateFirstField({required String errorText}) =>
       fields.values.first.invalidate(errorText);
 
-  bool validate() {
+  /// Validate all fields of form
+  ///
+  /// Focus to first invalid field when has field invalid, if [focusOnInvalid] is `true`.
+  /// By default `true`
+  ///
+  /// Auto scroll to first invalid field focused if [autoScrollWhenFocusOnInvalid] is `true`.
+  /// By default `false`.
+  ///
+  /// Note: If a invalid field is from type **TextField** and will focused,
+  /// the form will auto scroll to show this invalid field.
+  /// In this case, the automatic scroll happens because is a behavior inside the framework,
+  /// not because [autoScrollWhenFocusOnInvalid] is `true`.
+  bool validate({
+    bool focusOnInvalid = true,
+    bool autoScrollWhenFocusOnInvalid = false,
+  }) {
+    _focusOnInvalid = focusOnInvalid;
     final hasError = !_formKey.currentState!.validate();
-    if (hasError && widget.autoFocusOnValidationFailure) {
+    if (hasError) {
       final wrongFields =
           fields.values.where((element) => element.hasError).toList();
-      wrongFields.first.requestFocus();
+      if (wrongFields.isNotEmpty) {
+        if (focusOnInvalid) {
+          wrongFields.first.focus();
+        }
+        if (autoScrollWhenFocusOnInvalid) {
+          wrongFields.first.ensureScrollableVisibility();
+        }
+      }
     }
     return !hasError;
   }
 
-  bool saveAndValidate() {
+  /// Save form values and validate all fields of form
+  ///
+  /// Focus to first invalid field when has field invalid, if [focusOnInvalid] is `true`.
+  /// By default `true`
+  ///
+  /// Auto scroll to first invalid field focused if [autoScrollWhenFocusOnInvalid] is `true`.
+  /// By default `false`.
+  ///
+  /// Note: If a invalid field is from type **TextField** and will focused,
+  /// the form will auto scroll to show this invalid field.
+  /// In this case, the automatic scroll happens because is a behavior inside the framework,
+  /// not because [autoScrollWhenFocusOnInvalid] is `true`.
+  bool saveAndValidate({
+    bool focusOnInvalid = true,
+    bool autoScrollWhenFocusOnInvalid = false,
+  }) {
     save();
-    return validate();
+    return validate(
+      focusOnInvalid: focusOnInvalid,
+      autoScrollWhenFocusOnInvalid: autoScrollWhenFocusOnInvalid,
+    );
   }
 
+  /// Reset form to `initialValue`
   void reset() {
-    log('reset called');
-    _formKey.currentState!.reset();
-    for (var item in _fields.entries) {
-      try {
-        item.value.didChange(getRawValue(item.key));
-      } catch (e, st) {
-        log(
-          'Error when resetting field: ${item.key}',
-          error: e,
-          stackTrace: st,
-          level: 2000,
-        );
-      }
-    }
-    // _formKey.currentState!.setState(() {});
+    _formKey.currentState?.reset();
   }
 
+  /// Update fields values of form.
+  /// Useful when need update all values at once, after init.
+  ///
+  /// To load all values at once on init, use `initialValue` property
   void patchValue(Map<String, dynamic> val) {
     val.forEach((key, dynamic value) {
       _fields[key]?.didChange(value);
@@ -271,12 +337,32 @@ class FormBuilderState extends State<FormBuilder> {
     return Form(
       key: _formKey,
       autovalidateMode: widget.autovalidateMode,
-      onWillPop: widget.onWillPop,
+      onPopInvoked: widget.onPopInvoked,
+      canPop: widget.canPop,
       // `onChanged` is called during setInternalFieldValue else will be called early
-      child: FocusTraversalGroup(
-        policy: WidgetOrderTraversalPolicy(),
-        child: widget.child,
+      child: _FormBuilderScope(
+        formState: this,
+        child: FocusTraversalGroup(
+          policy: WidgetOrderTraversalPolicy(),
+          child: widget.child,
+        ),
       ),
     );
   }
+}
+
+class _FormBuilderScope extends InheritedWidget {
+  const _FormBuilderScope({
+    required super.child,
+    required FormBuilderState formState,
+  }) : _formState = formState;
+
+  final FormBuilderState _formState;
+
+  /// The [Form] associated with this widget.
+  FormBuilder get form => _formState.widget;
+
+  @override
+  bool updateShouldNotify(_FormBuilderScope oldWidget) =>
+      oldWidget._formState != _formState;
 }

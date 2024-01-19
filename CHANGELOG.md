@@ -1,3 +1,143 @@
+## [9.1.1]
+
+* `FormBuilderDateTimePicker` & `FormBuilderDateRangePicker`: Added optional parameter `mouseCursor`
+* Built with Flutter 3.13
+
+## [9.1.0]
+
+### Features
+
+* `FormBuilderFieldText`: Add onTapOutside property
+
+### Fixes
+
+* `FormBuilderField`: Misspelling
+* `FormBuilderField`: Remove force validation on autovalidation enables modes
+* `FormBuilderField`: Only focus on invalid field when no focus in another field
+* `FormBuilderField`: Only focus on invalid field when focusOnInvalid is true
+* `FormBuilderFieldDecoration`: Remove readonly property to enable decoration fields
+* `FormBuilderDropdown`: Only show dropdown value when has value on items
+* `FormBuilderDropdown`: Add deep compare when update dropdown items
+* `FormBuilderDateTimePicker`: Check mounted after async
+
+### Others
+
+* Improve readme
+* Apply MIT license
+* Update gradle config on example
+
+## [9.0.0]
+
+### BREAKING CHANGES
+
+* [Improve autovalidateMode](https://github.com/flutter-form-builder-ecosystem/flutter_form_builder/pull/1232)
+  * On FormBuilderField, `autovalidateMode` change default from `AutovalidateMode.onUserInteraction` to `AutovalidateMode.disabled`
+* [Refactor FormBuilderField](https://github.com/flutter-form-builder-ecosystem/flutter_form_builder/pull/1238)
+  * Add widget to remove decoration property from core. Now exist two field widgets:
+    1. `FormBuilderField`: Refactored. Now don't included decoration property or references to this property
+    2. `FormBuilderFieldDecoration`: New. Like the old `FormBuilderField`
+* [Remove FormBuilderCupertinoSegmentedControl](https://github.com/flutter-form-builder-ecosystem/flutter_form_builder/pull/1240)
+  * Remove `FormBuilderCupertinoSegmentedControl` field. Included on [form_builder_cupertino_fields](https://pub.dev/packages/form_builder_cupertino_fields)
+  * Update custom fields example without cupertino widgets
+  * Remove cupertino icons dependency
+* Update intl version to 0.18.0
+* Update constraints to Flutter 3.10
+* Update constraints to Dart 3
+
+### Features
+
+* **NEW** Add errors getter on `FormBuilder`. Can get all errors on form from formKey
+* Improve examples
+* Add gifs to readme
+* `FormBuilderSlider`: Able custom widgets max, min and value
+* `FormBuilderTextField`: Add `contentInsertionConfiguration` property
+
+### Fixes
+
+* Improve FormBuilder rebuild. Now only rebuild at same time the field that user touch, not all touched fields
+* Verify error fields on form validation
+* `FormBuilderDropdown`: Improve widget and solved assert error with initialValue (issue closed after 2 years and 5 months)
+
+## [9.0.0-dev.3]
+
+### BREAKING CHANGE
+
+* Update constraints to Dart 3
+
+## [9.0.0-dev.2]
+
+### BREAKING CHANGE
+
+* [Remove `FormBuilderCupertinoSegmentedControl`](https://github.com/flutter-form-builder-ecosystem/flutter_form_builder/pull/1240)
+  * Remove `FormBuilderCupertinoSegmentedControl` field. Included on [form_builder_cupertino_fields](https://pub.dev/packages/form_builder_cupertino_fields)
+  * Update custom fields example without cupertino widgets
+  * Remove cupertino icons dependency
+* Update intl version to 0.18.0
+* Update constraints to Flutter 3.10
+
+## [9.0.0-dev.1]
+
+### BREAKING CHANGE
+
+* [Improve autovalidateMode](https://github.com/flutter-form-builder-ecosystem/flutter_form_builder/pull/1232)
+  * On FormBuilderField, `autovalidateMode` change default from `AutovalidateMode.onUserInteraction` to `AutovalidateMode.disabled`
+
+* [Refactor FormBuilderField](https://github.com/flutter-form-builder-ecosystem/flutter_form_builder/pull/1238)
+  * Add widget to remove decoration property from core. Now exist two field widgets:
+
+    1. `FormBuilderField`: Refactored. Now don't included decoration property or references to this property
+    2. `FormBuilderFieldDecoration`: New. Like the old `FormBuilderField`
+
+
+### Features
+
+* **NEW** Add errors getter on `FormBuilder`. Can get all errors on form from formKey
+* Improve examples
+* Add gifs to readme
+* `FormBuilderSlider`: Able custom widgets max, min and value
+
+### Fixes
+
+* Improve FormBuilder rebuild. Now only rebuild at same time the field that user touch, not all touched fields
+* `FormBuilderDropdown`: Improve widget and solved assert error with initialValue (issue closed after 2 years and 5 months)
+
+## [8.0.0]
+
+### BREAKING CHANGE
+
+* [Improve focus and scroll](https://github.com/flutter-form-builder-ecosystem/flutter_form_builder/pull/1223)
+  * Remove property `shouldRequestFocus` for each form field
+  * Remove property `autoFocusOnValidationFailure` on `FormBuilder`. Use properties on `validate` and `invalidate` instead
+
+### Features
+
+* **NEW** Add `isDirty` property to field and form
+* **NEW** Add `isTouched` property to field and form
+* Add `focusOnInvalid` and `autoScrollWhenFocusOnInvalid` to `validate` and `saveAndValidate` methods from `FormBuilderState`
+* Add `focusOnInvalid` and `autoScrollWhenFocusOnInvalid` to `validate` method from `FormBuilderFieldState`
+* Add `shouldFocus` and `shouldAutoScrollWhenFocus` to `invalidate` method from `FormBuilderFieldState`
+* Depreciate `invalidateField` and `invalidateFirstField` on `FormBuilder`
+* Add desktop support (linux, macos, windows)
+* `FormBuilderRangeSlider`: Able custom widgets max, min and value
+
+### Bug fixes
+
+* Apply validation on init when autovalidate is always
+* Fix `skipDisabled` property on `FormBuilder`
+* Improve reset method. Simplify on form builder and update on form field to update value on interface.
+* `FormBuilderTextField`: Add support context menu by default
+
+## [7.8.0]
+
+* Remove deprecated property toggleableActiveColor
+* Add widget tests for FormBuilderRangeSlider
+* Add tests for FormBuilderDateRangePicker
+* Add OutlinedBorder shape BorderSide side to FormBuilderCheckbox
+* Add FormBuilderFields type alias
+* Able to change dynamically field name
+* Fix time picker dialog locale
+* Provide magnifier configuration parameter to form builder text field
+
 ## [7.7.0]
 
 * Added cursorHeight property for form builder text field ([#1112](https://github.com/flutter-form-builder-ecosystem/flutter_form_builder/pull/1112))
@@ -17,7 +157,7 @@
 
 * Apply license BSD-3-clause
 * Remove unused parameters from FormBuilderDateTimePicker (#1086)
-* Refactor readme 
+* Refactor readme
 
 ## [7.4.0]
 
